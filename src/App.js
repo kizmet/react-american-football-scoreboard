@@ -1,12 +1,54 @@
 //TODO: STEP 1 - Import the useState hook.
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
 import BottomRow from "./BottomRow";
+import ScoresButton from "./components/ScoresButton";
+
+function useInterval(callback, delay) {
+  const savedCallback = useRef();
+  // Remember the latest function.
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  // Set up the interval.
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+    if (delay !== null) {
+      let id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
 
 function App() {
   //TODO: STEP 2 - Establish your applictaion's state with some useState hooks.  You'll need one for the home score and another for the away score.
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [delay, setDelay] = useState(1000);
+  const [time, setTime] = useState(0);
+  const [startGame, setStartGame] = useState(false);
+
+  useInterval(
+    () => {
+      // Your custom logic here
+      setTime(time + 1);
+    },
+    startGame ? delay : null
+  );
+
+  const handleScore = props => {
+    const [teamScore, setTeamScore, points] = props;
+    setPoints(points);
+    setTeamScore(teamScore + points);
+  };
+
+  function handleClick(e) {
+    setDelay(Number(e.target.value));
+  }
 
   return (
     <div className="container">
@@ -19,7 +61,7 @@ function App() {
 
             <div className="home__score">{homeScore}</div>
           </div>
-          <div className="timer">00:03</div>
+          <div className="timer">{time}</div>
           <div className="away">
             <h2 className="away__name">Tigers</h2>
             <div className="away__score">{awayScore}</div>
@@ -28,28 +70,35 @@ function App() {
         <BottomRow />
       </section>
       <section className="buttons">
+          <button className="timerButtons" onClick={() => setStartGame(true)}>Start Game</button>
+          <button className="timerButtons" onClick={() => setStartGame(false)}>Stop Game</button>
         <div className="homeButtons">
           {/* TODO STEP 4 - Now we need to attach our state setter functions to click listeners. */}
-          <button
+          <ScoresButton
             className="homeButtons__touchdown"
-            onClick={() => setHomeScore(homeScore + 7)}
-          >
-            Home Touchdown
-          </button>
-          <button 
-          className="homeButtons__fieldGoal"
-          onClick={() => setHomeScore(homeScore + 3)}
-          >Home Field Goal</button>
+            points2={3}
+            handleScore={() => handleScore([homeScore, setHomeScore, 7])}
+            team={[homeScore, setHomeScore]}
+            text={"Home Touchdown"}
+          />
+          <ScoresButton
+            points={3}
+            className="homeButtons__fieldGoal"
+            handleScore={() => handleScore([homeScore, setHomeScore, 3])}
+            text={"Home Field Goal"}
+          />
         </div>
         <div className="awayButtons">
-          <button 
-          className="awayButtons__touchdown"
-          onClick={() => setAwayScore(awayScore + 7)}
-          >Away Touchdown</button>
-          <button 
-          className="awayButtons__fieldGoal"
-          onClick={() => setAwayScore(awayScore + 3)}
-          >Away Field Goal</button>
+          <ScoresButton
+            className="awayButtons__touchdown"
+            handleScore={() => handleScore([awayScore, setAwayScore, 7])}
+            text={"Away Touchdown"}
+          />
+          <ScoresButton
+            className="awayButtons__fieldGoal"
+            handleScore={() => handleScore([awayScore, setAwayScore, 3])}
+            text={"Away Field Goal"}
+          />
         </div>
       </section>
     </div>
